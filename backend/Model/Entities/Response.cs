@@ -9,7 +9,7 @@ namespace Model.Entities
         public string OwnerUserId { get; set; }
         public User Owner { get; set; }
         public string Content { get; set; }
-        public string FileExtension { get; set; }
+        public string? FileExtension { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
     }
