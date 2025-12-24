@@ -7,6 +7,7 @@ using Business.Abstract;
 using DataAccess.Abstract;
 using Model.DTOs.Response;
 using Core.Utilities.ExternalServices;
+using Business.Helpers;
 
 namespace Business.Concrete
 {
@@ -46,7 +47,8 @@ namespace Business.Concrete
             {
                 MessageId = messageID,
                 Content = llmResponse,
-                OwnerUserId = _currentUserService.UserId
+                OwnerUserId = _currentUserService.UserId,
+                FileExtension = FileParseManager.GetFileExtension(llmResponse),
             };
 
             var addedResponse = await _responseRepository.AddResponseAsync(response);
