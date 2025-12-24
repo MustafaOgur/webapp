@@ -11,6 +11,7 @@ using Core.Utilities.ExternalServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using FluentValidation.AspNetCore;
 using FluentValidation;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -128,6 +129,44 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 
+// 1. CORS Ayarı (Frontend'e İzin Verme)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactFrontend",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:3000") // React varsayılan portu
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+
+// 2. Rate Limiting (Saldırı Önleme)
+// Microsoft.AspNetCore.RateLimiting kütüphanesi .NET 7+ ile yerleşik gelir.
+builder.Services.AddRateLimiter(options =>
+{
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 100,       // Dakikada en fazla 100 istek
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 2           // Kuyrukta bekleyen istek limiti
+            });
+    });
+
+    // Reddedilen istekler için 429 (Too Many Requests) dön
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = 429;
+        await context.HttpContext.Response.WriteAsync("Cok fazla istek attiniz. Lutfen biraz bekleyin. (Rate Limit Exceeded)", token);
+    };
+});
+
+
 var app = builder.Build();
 
 // Otomatik migration uygula
@@ -144,6 +183,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// 1. CORS'u devreye al (Frontend kapıdan geçsin)
+app.UseCors("AllowReactFrontend");
+
+// 2. Rate Limiter'ı devreye al (Spam yapanı durdur)
+app.UseRateLimiter();
+
 
 app.UseHttpsRedirection();
 
