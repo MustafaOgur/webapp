@@ -26,5 +26,13 @@ namespace Core.Utilities.Security
                 return userId;
             }
         }
-}
+
+        public string Role
+        {
+            get
+            {
+                return _contextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value ?? "User";
+            }
+        }
+    }
 }

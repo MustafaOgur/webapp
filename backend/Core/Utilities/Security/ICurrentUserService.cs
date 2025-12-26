@@ -9,5 +9,6 @@ namespace Core.Utilities.Security
     public interface ICurrentUserService
     {
         string UserId { get; }
+        string Role { get; }
     }
 }

@@ -30,13 +30,13 @@ namespace DataAccess
         {
             // Global Query Filter
             modelBuilder.Entity<Chat>()
-                .HasQueryFilter(c => c.OwnerUserId == _currentUserService.UserId);
+                .HasQueryFilter(c => _currentUserService.Role == "Admin" || c.OwnerUserId == _currentUserService.UserId);
 
             modelBuilder.Entity<Message>()
-                .HasQueryFilter(m => m.OwnerUserId == _currentUserService.UserId);
+                .HasQueryFilter(m => _currentUserService.Role == "Admin" || m.OwnerUserId == _currentUserService.UserId);
 
             modelBuilder.Entity<Response>()
-                .HasQueryFilter(r => r.OwnerUserId == _currentUserService.UserId);
+                .HasQueryFilter(r => _currentUserService.Role == "Admin" || r.OwnerUserId == _currentUserService.UserId);
 
 
             modelBuilder.Entity<Message>()
