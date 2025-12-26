@@ -31,5 +31,7 @@ namespace DataAccess
     public class DummyCurrentUserService : ICurrentUserService
     {
         public string UserId => Guid.Empty.ToString(); // boş veya sabit id yeterli
+
+        public string Role => "User";
     }
 }
