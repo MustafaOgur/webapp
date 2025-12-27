@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace WebAPI.Controllers
 {
-    [Authorize]
+    [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
     public class RefreshTokenController : ControllerBase
