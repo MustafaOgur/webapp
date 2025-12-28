@@ -11,30 +11,31 @@ const setupInterceptors = (navigate) => {
     async (error) => {
       const originalConfig = error.config;
 
-      // Hata alırsak ve bu hata 401 ise (Yetkisiz) 
-      // VE daha önce retry yapmadıysak (sonsuz döngü olmasın diye)
+      // Eğer hata alınırsa, URL Login değilse ve Hata Kodu 401 ise
       if (originalConfig.url !== "/api/User/Login" && error.response) {
+        
+        // _retry bayrağı sonsuz döngüyü engeller
         if (error.response.status === 401 && !originalConfig._retry) {
           originalConfig._retry = true;
 
           try {
             // 1. Token yenilemeyi dene
-            const rs = await authService.refreshToken();
+            const result = await authService.refreshToken();
             
-            if (rs && rs.accessToken) {
-              // 2. Yeni token'ı header'a koy
-              // Backend 'AccessToken' dönüyor ama biz bearer olarak eklerken değişkene bakıyoruz
-              // authService zaten localStorage'ı güncelledi.
+            // Eğer authService { success: true, accessToken: '...' } dönerse
+            if (result.success && result.accessToken) {
               
+              // 2. Axios headerlarını güncelle (Gelecek istekler için)
+              axios.defaults.headers.common['Authorization'] = 'Bearer ' + result.accessToken;
+
               // 3. Başarısız olan isteğin header'ını güncelle
-              originalConfig.headers['Authorization'] = 'Bearer ' + rs.accessToken;
+              originalConfig.headers['Authorization'] = 'Bearer ' + result.accessToken;
               
-              // 4. İsteği tekrarla (Sanki hiç hata olmamış gibi)
+              // 4. İsteği tekrarla
               return axios(originalConfig);
             }
           } catch (_error) {
-            // Token yenilenemedi (Refresh token süresi de bitmiş)
-            // Çıkış yap ve Login'e at
+            // Token yenileme sırasında kritik hata oluştu
             authService.logout();
             navigate("/"); 
             return Promise.reject(_error);
@@ -42,6 +43,7 @@ const setupInterceptors = (navigate) => {
         }
       }
 
+      // Eğer 401 değilse veya yenileme başarısızsa hatayı fırlat
       return Promise.reject(error);
     }
   );

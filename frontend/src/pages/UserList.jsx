@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
-import DashboardLayout from "../layouts/DashboardLayout";
+// import DashboardLayout from "../layouts/DashboardLayout"; // <--- BU SATIRI SİLDİK
 import adminService from "../services/adminService";
-import authService from "../services/authService"; // <-- Auth servisini eklemeyi unutma
+import authService from "../services/authService"; 
 import { toast } from "react-toastify";
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false); // Varsayılan false yaptık, yetki varsa true yapacağız
-  const [user, setUser] = useState(null); // Giriş yapan kullanıcı
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null); 
 
   useEffect(() => {
     // 1. Önce kullanıcının kim olduğuna bak
@@ -16,7 +16,7 @@ const UserList = () => {
 
     // 2. Sadece ve Sadece ADMIN ise Backend'e git
     if (currentUser && currentUser.role === 'Admin') {
-        setLoading(true); // Yüklemeyi başlat
+        setLoading(true); 
         adminService.getAllUsers()
           .then((data) => {
             setUsers(data || []); 
@@ -30,9 +30,9 @@ const UserList = () => {
     }
   }, []);
 
+  // --- RETURN KISMINDA DASHBOARDLAYOUT'U KALDIRDIK ---
   return (
-    <DashboardLayout>
-      <div className="container-fluid">
+      <div className="container-fluid p-4">
         
         {/* GÜVENLİK KONTROLÜ: Sadece Admin ise tabloyu göster */}
         {user && user.role === 'Admin' ? (
@@ -83,16 +83,13 @@ const UserList = () => {
             </>
         ) : (
             // --- YETKİSİZ GİRİŞ UYARISI ---
-            // Admin olmayan biri URL'yi elle yazıp girerse burayı görür
             <div className="alert alert-danger text-center mt-5 shadow-sm">
                 <h4>⛔ Erişim Engellendi</h4>
                 <p>Bu sayfayı görüntülemek için Admin yetkisine sahip olmanız gerekmektedir.</p>
-                
             </div>
         )}
 
       </div>
-    </DashboardLayout>
   );
 };
 
