@@ -87,6 +87,39 @@ namespace Business.Concrete
             return new SuccessResult($"{id} ID'sine sahip chat silindi");
         }
 
+        public async Task<IDataResult<IEnumerable<ChatHistoryDto>>> GetChatHistoryAsync(string chatId)
+        {
+            // 1. Chat'i çek
+            var chat = await _chatRepository.GetByIdAsync(chatId);
+
+            if (chat == null)
+            {
+                return new ErrorDataResult<IEnumerable<ChatHistoryDto>>("Chat bulunamadı.", ErrorCodes.CHAT_NOT_FOUND);
+            }
+
+            // 2. Güvenlik Kontrolü
+            if (chat.OwnerUserId != _currentUserService.UserId)
+            {
+                return new ErrorDataResult<IEnumerable<ChatHistoryDto>>("Bu sohbeti görüntüleme yetkiniz yok."); 
+            }
+
+            // 3. Entity -> DTO Dönüşümü (DÜZELTİLDİ: Timestamp kullanıldı)
+            var history = chat.Messages
+                .OrderBy(m => m.Timestamp) // Sıralama Timestamp'e göre
+                .Select(m => new ChatHistoryDto
+                {
+                    MessageId = m.Id,
+                    UserMessage = m.Content,
+                    MessageDate = m.Timestamp, // CreatedDate -> Timestamp oldu
+                    
+                    AiResponse = m.Response?.Content, 
+                    ResponseDate = m.Response?.Timestamp // CreatedDate -> Timestamp oldu
+                })
+                .ToList();
+
+            return new SuccessDataResult<IEnumerable<ChatHistoryDto>>(history, "Sohbet geçmişi getirildi.");
+        }
+
     }
 
 }
