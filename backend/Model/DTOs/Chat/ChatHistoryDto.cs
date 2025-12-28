@@ -10,5 +10,6 @@ namespace Model.DTOs.Chat
         
         public string? AiResponse { get; set; } 
         public DateTime? ResponseDate { get; set; }
+        public string? FileExtension { get; set; }
     }
 }
