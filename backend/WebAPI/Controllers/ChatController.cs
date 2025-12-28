@@ -81,5 +81,19 @@ namespace WebAPI.Controllers
 
             return Ok(result);
         }
+
+
+        [HttpGet("GetChatHistory")]
+        public async Task<IActionResult> GetChatHistoryAsync(string chatId)
+        {
+            var result = await _chatService.GetChatHistoryAsync(chatId);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
     }
 }
