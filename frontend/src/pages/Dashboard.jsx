@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import DashboardLayout from "../layouts/DashboardLayout";
+// import DashboardLayout from "../layouts/DashboardLayout"; // <--- BU SATIRI SİLİYORUZ
 import authService from "../services/authService";
 import adminService from "../services/adminService";
 import { toast } from "react-toastify";
@@ -7,7 +7,6 @@ import { toast } from "react-toastify";
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   
-  // Backend DTO yapısı
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalChats: 0,
@@ -21,7 +20,6 @@ const Dashboard = () => {
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
 
-    // Sadece ADMIN ise verileri çek
     if (currentUser && currentUser.role === 'Admin') {
         setLoading(true);
         adminService.getDashboardStats()
@@ -37,9 +35,9 @@ const Dashboard = () => {
     }
   }, []);
 
+  // --- RETURN KISMINDA DASHBOARDLAYOUT'U KALDIRDIK ---
   return (
-    <DashboardLayout>
-      <div className="container-fluid">
+      <div className="container-fluid p-4">
         
         {/* SADECE ADMIN İÇİN İÇERİK */}
         {user && user.role === 'Admin' ? (
@@ -93,14 +91,12 @@ const Dashboard = () => {
            </div>
         ) : (
             // --- YETKİSİZ GİRİŞ UYARISI ---
-            // Normal kullanıcı URL'yi elle yazıp girerse burayı görür
             <div className="alert alert-danger text-center mt-5 shadow-sm">
                 <h4>⛔ Erişim Engellendi</h4>
                 <p>Bu sayfayı görüntülemek için Admin yetkisine sahip olmanız gerekmektedir.</p>
             </div>
         )}
       </div>
-    </DashboardLayout>
   );
 };
 

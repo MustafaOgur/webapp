@@ -3,6 +3,7 @@ import { jwtDecode } from "jwt-decode";
 
 // Backend Portun: 5199
 const API_URL = "http://localhost:5199/api/User/"; 
+const REFRESH_URL = "http://localhost:5199/api/RefreshToken/Refresh"; // Endpoint adresin
 
 const register = async (username, email, password) => {
   const response = await axios.post(API_URL + "Register", {
@@ -19,22 +20,20 @@ const login = async (email, password) => {
     password: password,
   });
 
-  // DÜZELTME BURADA: Hem küçük 'a' hem büyük 'A' kontrol ediyoruz.
-  // .NET genelde 'accessToken' gönderir, biz işimizi sağlama alalım.
   const token = response.data.accessToken || response.data.AccessToken;
   const refreshToken = response.data.refreshToken || response.data.RefreshToken;
 
   if (token) {
     const decodedToken = jwtDecode(token);
 
-    // 1. Rolü bul (Uzun URL veya kısa 'role' key)
+    // 1. Rolü bul
     let rawRole = 
         decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || 
         decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role"] ||    
         decodedToken["role"] || 
         "User";
 
-    // 2. Rolü Standartlaştır (admin -> Admin)
+    // 2. Rolü Standartlaştır
     const normalizedRole = rawRole.toString().charAt(0).toUpperCase() + rawRole.toString().slice(1).toLowerCase();
 
     // 3. İsim bul
@@ -50,9 +49,6 @@ const login = async (email, password) => {
 
     // 4. Kaydet
     localStorage.setItem("user", JSON.stringify(userObj));
-    console.log("Giriş Başarılı! Kaydedilen Kullanıcı:", userObj); // Kontrol için konsola yazdırıyoruz
-  } else {
-    console.error("Token bulunamadı! Gelen veri:", response.data);
   }
   
   return response.data;
@@ -66,35 +62,46 @@ const getCurrentUser = () => {
   return JSON.parse(localStorage.getItem("user"));
 };
 
+// --- GÜNCELLENEN REFRESHTOKEN FONKSİYONU ---
 const refreshToken = async () => {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = getCurrentUser();
   
-  if (user && user.refreshToken) {
-    try {
-      // Backend'deki endpoint'e istek atıyoruz
-      const response = await axios.post("http://localhost:5199/api/RefreshToken/Refresh", {
-        token: user.refreshToken // DTO'ndaki isme göre (Token)
-      });
+  // Eğer kullanıcı veya refresh token yoksa başarısız dön
+  if (!user || !user.refreshToken) return { success: false };
 
-      if (response.data.AccessToken) {
-        // Yeni tokenları kullanıcı objesine güncelle
-        user.accessToken = response.data.AccessToken;
-        user.refreshToken = response.data.RefreshToken;
-        
-        // LocalStorage'ı güncelle
-        localStorage.setItem("user", JSON.stringify(user));
-        
-        return user;
+  try {
+    // Backend'e istek at
+    const response = await axios.post(REFRESH_URL, {
+      token: user.refreshToken 
+    });
+
+    // Backend 'AccessToken' veya 'data.AccessToken' dönebilir, kontrol et
+    const newAccessToken = response.data.AccessToken || response.data.accessToken;
+    const newRefreshToken = response.data.RefreshToken || response.data.refreshToken;
+
+    if (newAccessToken) {
+      // 1. User objesini güncelle
+      user.accessToken = newAccessToken;
+      // Eğer backend yeni refresh token da dönüyorsa onu da güncelle (Best Practice)
+      if (newRefreshToken) {
+          user.refreshToken = newRefreshToken;
       }
-    } catch (error) {
-      console.error("Token yenileme hatası:", error);
-      // Refresh token da geçersizse kullanıcıyı tamamen çıkarmalıyız
-      logout(); 
+      
+      // 2. LocalStorage'ı güncelle
+      localStorage.setItem("user", JSON.stringify(user));
+      
+      // 3. Başarılı olduğunu ve yeni token'ı dön
+      return { success: true, accessToken: newAccessToken };
     }
+  } catch (error) {
+    console.error("Token yenileme hatası:", error);
+    // Hata varsa (Refresh token süresi dolmuşsa) çıkış yap
+    logout(); 
   }
-  return null;
+  
+  // Herhangi bir sorun varsa başarısız dön
+  return { success: false };
 };
-
 
 const authService = {
   register,
@@ -105,4 +112,3 @@ const authService = {
 };
 
 export default authService;
-

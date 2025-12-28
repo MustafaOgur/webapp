@@ -12,12 +12,16 @@ import Dashboard from './pages/Dashboard';
 import UserList from './pages/UserList';
 import Home from './pages/Home';
 
-// YENİ: Güvenlik Görevlisi
+// Layout
+import DashboardLayout from './layouts/DashboardLayout'; 
+
+// Güvenlik
 import ProtectedRoute from './components/ProtectedRoute'; 
 
 const AppContent = () => {
   const navigate = useNavigate();
 
+  // Interceptor'ı burada kuruyoruz, navigate fonksiyonunu içine atıyoruz
   useEffect(() => {
     setupInterceptors(navigate);
   }, [navigate]);
@@ -28,35 +32,37 @@ const AppContent = () => {
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
       
-      {/* --- KORUMALI SAYFALAR (Sadece Giriş Yapanlar) --- */}
-      {/* ProtectedRoute içine aldığımız her şey, Sidebar dahil korunur */}
-      
-      <Route 
-        path="/dashboard" 
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/users" 
-        element={
-          <ProtectedRoute>
-            <UserList />
-          </ProtectedRoute>
-        } 
-      />
+      {/* --- SIDEBAR'LI SAYFALAR --- */}
+      <Route element={<DashboardLayout />}>
+          
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/users" 
+            element={
+              <ProtectedRoute>
+                <UserList />
+              </ProtectedRoute>
+            } 
+          />
 
-      <Route 
-        path="/home" 
-        element={
-          <ProtectedRoute>
-            <Home />
-          </ProtectedRoute>
-        } 
-      />
+          <Route 
+            path="/home" 
+            element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            } 
+          />
+
+      </Route>
 
     </Routes>
   );
