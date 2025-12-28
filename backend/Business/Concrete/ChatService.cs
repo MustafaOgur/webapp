@@ -113,7 +113,8 @@ namespace Business.Concrete
                     MessageDate = m.Timestamp, // CreatedDate -> Timestamp oldu
                     
                     AiResponse = m.Response?.Content, 
-                    ResponseDate = m.Response?.Timestamp // CreatedDate -> Timestamp oldu
+                    ResponseDate = m.Response?.Timestamp, // CreatedDate -> Timestamp oldu
+                    FileExtension = m.Response?.FileExtension
                 })
                 .ToList();
 
