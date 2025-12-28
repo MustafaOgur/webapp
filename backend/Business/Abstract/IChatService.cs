@@ -21,5 +21,7 @@ namespace Business.Abstract
         Task<IResult> DeleteChatAsync(string id);
 
         //Task<IResult> DeleteAllChatsAsync();
+
+        Task<IDataResult<IEnumerable<ChatHistoryDto>>> GetChatHistoryAsync(string chatId);
     }
 }
