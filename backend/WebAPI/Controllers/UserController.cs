@@ -57,19 +57,44 @@ namespace WebAPI.Controllers
 
                 var accessToken = _tokenService.GenerateAccessToken(claims);
                 var refreshToken = _tokenService.GenerateRefreshToken();
-                var expiry = DateTime.UtcNow.AddDays(int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"]!));
+                
+                // Config'den süreyi alıyoruz
+                var expiryDays = int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"]!);
+                var expiry = DateTime.UtcNow.AddDays(expiryDays);
 
+                // Refresh token'ı veritabanına kaydediyoruz
                 await _refreshTokenService.AddRefreshTokenAsync(result.Data, refreshToken, expiry);
 
+                // --- KRİTİK DEĞİŞİKLİK BURADA ---
+                // Refresh Token'ı JSON olarak değil, HttpOnly Cookie olarak veriyoruz.
+                SetRefreshTokenCookie(refreshToken, expiry);
+
+                // Kullanıcıya sadece Access Token dönüyoruz. Refresh Token gizli (Cookie'de).
                 return Ok(new
                 {
                     AccessToken = accessToken,
-                    RefreshToken = refreshToken
+                    // RefreshToken = refreshToken  <-- ARTIK BU SATIRI SİLDİK
+                    Message = "Giriş başarılı, oturum cookie ile başlatıldı."
                 });
             }
 
             return BadRequest(result);
         }
 
+
+
+        private void SetRefreshTokenCookie(string token, DateTime expires)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,       // Kritik nokta: Javascript (Hacker) okuyamaz.
+                Expires = expires,     // Token süresi bitince çerez de silinir.
+                SameSite = SameSiteMode.Strict, // CSRF saldırılarını engeller.
+                Secure = true,         // Sadece HTTPS üzerinden çalışır (Localhost'ta da çalışır).
+            };
+
+            // Tarayıcıya "refreshToken" adında bir kurabiye bırakıyoruz.
+            Response.Cookies.Append("refreshToken", token, cookieOptions);
+        }
     }
 }

@@ -1,32 +1,15 @@
-import axios from "axios";
-import authService from "./authService";
+import api from "./api"; // api.js kullan
 
-const API_URL = "http://localhost:5199/api/Admin/";
-
-const getAuthHeader = () => {
-  const user = authService.getCurrentUser();
-  if (user && user.accessToken) {
-    return { Authorization: 'Bearer ' + user.accessToken }; 
-  } else {
-    return {};
-  }
-};
+// URL'leri /Admin/ ile başlatıyoruz, baseURL zaten tanımlı.
 
 const getDashboardStats = async () => {
-  const response = await axios.get(API_URL + "GetDashboardStats", {
-    headers: getAuthHeader()
-  });
-  // Backend: SuccessDataResult { data: {...}, success: true, message: "..." }
-  // Axios: response.data = SuccessDataResult
-  // Bizim istediğimiz: response.data.data
-  return response.data.data; 
+  const response = await api.get("/Admin/GetDashboardStats");
+  // Interceptor header'ı eklediği için manuel eklemeye gerek yok.
+  return response.data.data;
 };
 
 const getAllUsers = async () => {
-  const response = await axios.get(API_URL + "GetAllUsers", {
-    headers: getAuthHeader()
-  });
-  // List<UserDto> verisi response.data.data içindedir
+  const response = await api.get("/Admin/GetAllUsers");
   return response.data.data;
 };
 
