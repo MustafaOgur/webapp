@@ -8,7 +8,7 @@ namespace Core.Utilities.ExternalServices
 {
     public interface ILlmClient
     {
-        Task<string> SendMessageAsync(string prompt, string systemPrompt = null, string model = "openai/gpt-oss-20b:free", Dictionary<string, object> extraBody = null);
+        Task<string> SendMessageAsync(string prompt, string systemPrompt = null, string model = "xiaomi/mimo-v2-flash:free", Dictionary<string, object> extraBody = null);
 
     }
 }

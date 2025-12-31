@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import setupInterceptors from './services/setupInterceptors';
+import authService from './services/authService';
 
 // Sayfalar
 import Login from './pages/Login';
@@ -21,16 +22,34 @@ import ProtectedRoute from './components/ProtectedRoute';
 const AppContent = () => {
   const navigate = useNavigate();
 
-  // Interceptor'ı burada kuruyoruz, navigate fonksiyonunu içine atıyoruz
   useEffect(() => {
     setupInterceptors(navigate);
   }, [navigate]);
 
+  // Kullanıcıyı Oku
+  const user = authService.getCurrentUser();
+
+  // --- ROL KONTROLÜ FONKSİYONU ---
+  const getHomeRoute = () => {
+    // Eğer rolü 'Admin' ise Dashboard'a gönder
+    if (user?.role === 'Admin') {
+      return "/dashboard";
+    }
+    // Değilse (User ise) Home'a gönder
+    return "/home";
+  };
+
   return (
     <Routes>
-      {/* --- HALKA AÇIK SAYFALAR --- */}
-      <Route path="/" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {/* --- GİRİŞ / KAYIT (Doluysa Yönlendir) --- */}
+      <Route 
+        path="/" 
+        element={user ? <Navigate to={getHomeRoute()} replace /> : <Login />} 
+      />
+      <Route 
+        path="/register" 
+        element={user ? <Navigate to={getHomeRoute()} replace /> : <Register />} 
+      />
       
       {/* --- SIDEBAR'LI SAYFALAR --- */}
       <Route element={<DashboardLayout />}>

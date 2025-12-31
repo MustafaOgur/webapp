@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-// import DashboardLayout from "../layouts/DashboardLayout"; // <--- BU SATIRI SİLDİK
+// import DashboardLayout from "../layouts/DashboardLayout"; 
 import adminService from "../services/adminService";
 import authService from "../services/authService"; 
 import { toast } from "react-toastify";
@@ -9,13 +9,16 @@ const UserList = () => {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null); 
 
+  // --- AŞAMA 1: Kullanıcıyı State'e Yükle ---
   useEffect(() => {
-    // 1. Önce kullanıcının kim olduğuna bak
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
+  }, []);
 
-    // 2. Sadece ve Sadece ADMIN ise Backend'e git
-    if (currentUser && currentUser.role === 'Admin') {
+  // --- AŞAMA 2: Kullanıcı "Var" Olduğunda Backend'e Git ---
+  useEffect(() => {
+    // Kullanıcı state'e oturduysa ve Admin ise isteği gönder
+    if (user && user.role === 'Admin') {
         setLoading(true); 
         adminService.getAllUsers()
           .then((data) => {
@@ -28,9 +31,8 @@ const UserList = () => {
             setLoading(false);
           });
     }
-  }, []);
+  }, [user]); // 'user' state'i değiştiği an (yüklendiği an) tetiklenir
 
-  // --- RETURN KISMINDA DASHBOARDLAYOUT'U KALDIRDIK ---
   return (
       <div className="container-fluid p-4">
         
@@ -83,10 +85,13 @@ const UserList = () => {
             </>
         ) : (
             // --- YETKİSİZ GİRİŞ UYARISI ---
-            <div className="alert alert-danger text-center mt-5 shadow-sm">
-                <h4>⛔ Erişim Engellendi</h4>
-                <p>Bu sayfayı görüntülemek için Admin yetkisine sahip olmanız gerekmektedir.</p>
-            </div>
+            // (user null değilse ve Admin değilse göster)
+            user && (
+                <div className="alert alert-danger text-center mt-5 shadow-sm">
+                    <h4>⛔ Erişim Engellendi</h4>
+                    <p>Bu sayfayı görüntülemek için Admin yetkisine sahip olmanız gerekmektedir.</p>
+                </div>
+            )
         )}
 
       </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-// import DashboardLayout from "../layouts/DashboardLayout"; // <--- BU SATIRI SİLİYORUZ
+// import DashboardLayout from "../layouts/DashboardLayout"; // Gerek yok, App.js hallediyor
 import authService from "../services/authService";
 import adminService from "../services/adminService";
 import { toast } from "react-toastify";
@@ -16,26 +16,35 @@ const Dashboard = () => {
   
   const [loading, setLoading] = useState(false);
 
+  // --- AŞAMA 1: Kullanıcıyı Yükle ---
   useEffect(() => {
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
+  }, []); // Sadece sayfa ilk açıldığında çalışır
 
-    if (currentUser && currentUser.role === 'Admin') {
-        setLoading(true);
-        adminService.getDashboardStats()
-            .then(data => {
-                setStats(data); 
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error("Stats error:", err);
-                toast.error("İstatistikler yüklenirken hata oluştu.");
-                setLoading(false);
-            });
+  // --- AŞAMA 2: Kullanıcı "Var" Olduğunda Veriyi Çek ---
+  useEffect(() => {
+    // Kullanıcı bilgisi yüklendiyse VE rolü Admin ise isteği at
+    // Bu sayede App.js'in interceptorları kurması için zaman kazanıyoruz
+    if (user && user.role === 'Admin') {
+        loadDashboardStats();
     }
-  }, []);
+  }, [user]); // 'user' değiştiği an (yani yüklendiği an) burası çalışır
 
-  // --- RETURN KISMINDA DASHBOARDLAYOUT'U KALDIRDIK ---
+  const loadDashboardStats = () => {
+    setLoading(true);
+    adminService.getDashboardStats()
+        .then(data => {
+            setStats(data); 
+            setLoading(false);
+        })
+        .catch(err => {
+            console.error("Stats error:", err);
+            toast.error("İstatistikler yüklenirken hata oluştu.");
+            setLoading(false);
+        });
+  };
+
   return (
       <div className="container-fluid p-4">
         
@@ -48,9 +57,9 @@ const Dashboard = () => {
                 <div className="col-md-3 mb-4">
                   <div className="card text-white bg-primary shadow h-100">
                     <div className="card-body">
-                       <h6 className="card-title text-uppercase mb-0 opacity-75">Kullanıcılar</h6>
-                       <h2 className="display-4 fw-bold my-2">{loading ? "-" : stats.totalUsers}</h2>
-                       <p className="mb-0 small opacity-75">Toplam Kayıtlı</p>
+                        <h6 className="card-title text-uppercase mb-0 opacity-75">Kullanıcılar</h6>
+                        <h2 className="display-4 fw-bold my-2">{loading ? "-" : stats.totalUsers}</h2>
+                        <p className="mb-0 small opacity-75">Toplam Kayıtlı</p>
                     </div>
                   </div>
                 </div>
@@ -59,9 +68,9 @@ const Dashboard = () => {
                 <div className="col-md-3 mb-4">
                   <div className="card text-white bg-success shadow h-100">
                     <div className="card-body">
-                       <h6 className="card-title text-uppercase mb-0 opacity-75">Sohbetler</h6>
-                       <h2 className="display-4 fw-bold my-2">{loading ? "-" : stats.totalChats}</h2>
-                       <p className="mb-0 small opacity-75">Oluşturulan Chat</p>
+                        <h6 className="card-title text-uppercase mb-0 opacity-75">Sohbetler</h6>
+                        <h2 className="display-4 fw-bold my-2">{loading ? "-" : stats.totalChats}</h2>
+                        <p className="mb-0 small opacity-75">Oluşturulan Chat</p>
                     </div>
                   </div>
                 </div>
@@ -70,9 +79,9 @@ const Dashboard = () => {
                 <div className="col-md-3 mb-4">
                   <div className="card text-dark bg-warning shadow h-100">
                     <div className="card-body">
-                       <h6 className="card-title text-uppercase mb-0 opacity-75">Mesajlar</h6>
-                       <h2 className="display-4 fw-bold my-2">{loading ? "-" : stats.totalMessages}</h2>
-                       <p className="mb-0 small opacity-75">Toplam Mesaj</p>
+                        <h6 className="card-title text-uppercase mb-0 opacity-75">Mesajlar</h6>
+                        <h2 className="display-4 fw-bold my-2">{loading ? "-" : stats.totalMessages}</h2>
+                        <p className="mb-0 small opacity-75">Toplam Mesaj</p>
                     </div>
                   </div>
                 </div>
@@ -81,9 +90,9 @@ const Dashboard = () => {
                 <div className="col-md-3 mb-4">
                   <div className="card text-white bg-info shadow h-100">
                     <div className="card-body">
-                       <h6 className="card-title text-uppercase mb-0 opacity-75">AI Cevapları</h6>
-                       <h2 className="display-4 fw-bold my-2">{loading ? "-" : stats.totalAiResponses}</h2>
-                       <p className="mb-0 small opacity-75">Bot Yanıtları</p>
+                        <h6 className="card-title text-uppercase mb-0 opacity-75">AI Cevapları</h6>
+                        <h2 className="display-4 fw-bold my-2">{loading ? "-" : stats.totalAiResponses}</h2>
+                        <p className="mb-0 small opacity-75">Bot Yanıtları</p>
                     </div>
                   </div>
                 </div>
@@ -91,10 +100,13 @@ const Dashboard = () => {
            </div>
         ) : (
             // --- YETKİSİZ GİRİŞ UYARISI ---
-            <div className="alert alert-danger text-center mt-5 shadow-sm">
-                <h4>⛔ Erişim Engellendi</h4>
-                <p>Bu sayfayı görüntülemek için Admin yetkisine sahip olmanız gerekmektedir.</p>
-            </div>
+            // (user null değilse ve rolü Admin değilse göster)
+            user && (
+                <div className="alert alert-danger text-center mt-5 shadow-sm">
+                    <h4>⛔ Erişim Engellendi</h4>
+                    <p>Bu sayfayı görüntülemek için Admin yetkisine sahip olmanız gerekmektedir.</p>
+                </div>
+            )
         )}
       </div>
   );

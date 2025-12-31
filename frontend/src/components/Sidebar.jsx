@@ -32,26 +32,29 @@ const Sidebar = ({ onSelectChat, selectedChatId, refreshTrigger }) => {
   const [chats, setChats] = useState([]); 
 
   // --- STATE YÖNETİMİ ---
-  // Create
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newChatName, setNewChatName] = useState("");
 
-  // Edit
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingChat, setEditingChat] = useState(null); // Düzenlenecek chat objesi
+  const [editingChat, setEditingChat] = useState(null);
   const [editChatName, setEditChatName] = useState("");
 
-  // Delete
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletingChat, setDeletingChat] = useState(null); // Silinecek chat objesi
+  const [deletingChat, setDeletingChat] = useState(null);
 
+  // --- DÜZELTME 1: KULLANICIYI BAŞLANGIÇTA YÜKLE ---
   useEffect(() => {
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
-    if (currentUser && currentUser.role !== 'Admin') {
+  }, []); // Sadece sayfa ilk açıldığında çalışır
+
+  // --- DÜZELTME 2: KULLANICI GELDİĞİNDE VEYA TRIGGER DEĞİŞTİĞİNDE CHATLERİ ÇEK ---
+  useEffect(() => {
+    // Kullanıcı varsa ve Admin değilse listeyi çek
+    if (user && user.role !== 'Admin') {
         loadChats();
     }
-  }, [refreshTrigger]);
+  }, [user, refreshTrigger]); // user veya refreshTrigger değişirse çalışır
 
   const loadChats = () => {
       chatService.getAllChats()
@@ -83,7 +86,7 @@ const Sidebar = ({ onSelectChat, selectedChatId, refreshTrigger }) => {
 
   // --- UPDATE (RENAME) ---
   const openEditModal = (chat, e) => {
-      e.stopPropagation(); // Butona basınca chate girmesin diye
+      e.stopPropagation(); 
       setEditingChat(chat);
       setEditChatName(chat.name);
       setShowEditModal(true);
@@ -105,7 +108,7 @@ const Sidebar = ({ onSelectChat, selectedChatId, refreshTrigger }) => {
 
   // --- DELETE ---
   const openDeleteModal = (chat, e) => {
-      e.stopPropagation(); // Butona basınca chate girmesin diye
+      e.stopPropagation(); 
       setDeletingChat(chat);
       setShowDeleteModal(true);
   };
@@ -118,7 +121,6 @@ const Sidebar = ({ onSelectChat, selectedChatId, refreshTrigger }) => {
               toast.info("Sohbet silindi");
               setShowDeleteModal(false);
               
-              // Eğer silinen chat şu an açıksa, seçimi kaldır (Home'a dön)
               if (selectedChatId === deletingChat.id) {
                   if (onSelectChat) onSelectChat(null);
                   navigate("/home"); 
@@ -133,16 +135,14 @@ const Sidebar = ({ onSelectChat, selectedChatId, refreshTrigger }) => {
   return (
     <div className="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" style={{ width: "280px", height: "100vh" }}>
       
-      {/* --- BURASI GÜNCELLENDİ: LOGOYA TIKLAMA ÖZELLİĞİ --- */}
+      {/* LOGO */}
       <div 
         className="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none"
-        // Eğer kullanıcı Admin değilse imleç el işareti olsun
         style={{ cursor: user?.role !== 'Admin' ? 'pointer' : 'default' }}
         onClick={() => {
-            // Admin olmayanlar tıkladığında ana ekrana dön
             if (user?.role !== 'Admin') {
-                if (onSelectChat) onSelectChat(null); // Seçili chati sıfırla
-                navigate("/home"); // Home rotasına git
+                if (onSelectChat) onSelectChat(null); 
+                navigate("/home"); 
             }
         }}
       >
@@ -151,7 +151,7 @@ const Sidebar = ({ onSelectChat, selectedChatId, refreshTrigger }) => {
       
       <hr />
       
-      {/* NEW CHAT BUTONU */}
+      {/* NEW CHAT BUTTON */}
       {user && user.role !== 'Admin' && (
           <button 
             className="btn btn-primary w-100 mb-3 fw-bold"
@@ -161,7 +161,7 @@ const Sidebar = ({ onSelectChat, selectedChatId, refreshTrigger }) => {
           </button>
       )}
 
-      {/* CHAT LİSTESİ */}
+      {/* CHAT LIST */}
       <div className="flex-grow-1 overflow-auto custom-scrollbar mb-3">
         <ul className="nav nav-pills flex-column mb-auto">
             {/* Admin Linkleri */}
@@ -175,18 +175,15 @@ const Sidebar = ({ onSelectChat, selectedChatId, refreshTrigger }) => {
             {/* Kullanıcı Chatleri */}
             {user && user.role !== 'Admin' && chats.map(chat => (
                 <li key={chat.id} className="nav-item mb-1">
-                    {/* CSS: Flex yapısı ile butonları sağa yaslıyoruz */}
                     <div 
                         className={`nav-link text-white d-flex justify-content-between align-items-center ${selectedChatId === chat.id ? "active bg-secondary" : ""}`}
                         style={{cursor: "pointer"}}
                         onClick={() => onSelectChat(chat.id)}
                     >
-                        {/* Chat İsmi (Text Truncate ile taşmayı engelle) */}
                         <div className="text-truncate me-2">
                              💬 {chat.name}
                         </div>
 
-                        {/* Aksiyon Butonları (Sadece hover olunca göstermek daha şık olur ama şimdilik hep gösterelim) */}
                         <div className="d-flex gap-1">
                             <button 
                                 className="btn btn-sm btn-link text-white p-0 text-decoration-none opacity-50 hover-opacity-100" 
@@ -217,47 +214,22 @@ const Sidebar = ({ onSelectChat, selectedChatId, refreshTrigger }) => {
       </div>
 
       {/* --- MODALLAR --- */}
-
-      {/* 1. CREATE MODAL */}
       <SimpleModal 
-        show={showCreateModal} 
-        onClose={() => setShowCreateModal(false)} 
-        onConfirm={handleCreateChat}
-        title="Yeni Sohbet Başlat"
+        show={showCreateModal} onClose={() => setShowCreateModal(false)} onConfirm={handleCreateChat} title="Yeni Sohbet Başlat"
       >
-         <input 
-            type="text" className="form-control" placeholder="Sohbet Adı"
-            value={newChatName} onChange={(e) => setNewChatName(e.target.value)} autoFocus
-         />
+         <input type="text" className="form-control" placeholder="Sohbet Adı" value={newChatName} onChange={(e) => setNewChatName(e.target.value)} autoFocus />
       </SimpleModal>
 
-      {/* 2. EDIT MODAL */}
       <SimpleModal 
-        show={showEditModal} 
-        onClose={() => setShowEditModal(false)} 
-        onConfirm={handleUpdateChat}
-        title="Sohbet Adını Düzenle"
-        confirmText="Güncelle"
+        show={showEditModal} onClose={() => setShowEditModal(false)} onConfirm={handleUpdateChat} title="Sohbet Adını Düzenle" confirmText="Güncelle"
       >
-         <input 
-            type="text" className="form-control"
-            value={editChatName} onChange={(e) => setEditChatName(e.target.value)} autoFocus
-         />
+         <input type="text" className="form-control" value={editChatName} onChange={(e) => setEditChatName(e.target.value)} autoFocus />
       </SimpleModal>
 
-      {/* 3. DELETE MODAL */}
       <SimpleModal 
-        show={showDeleteModal} 
-        onClose={() => setShowDeleteModal(false)} 
-        onConfirm={handleDeleteChat}
-        title="Sohbeti Sil?"
-        confirmText="Sil"
-        confirmColor="btn-danger"
+        show={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={handleDeleteChat} title="Sohbeti Sil?" confirmText="Sil" confirmColor="btn-danger"
       >
-         <p>
-             <b>{deletingChat?.name}</b> adlı sohbeti silmek istediğine emin misin? 
-             Bu işlem geri alınamaz.
-         </p>
+         <p><b>{deletingChat?.name}</b> adlı sohbeti silmek istediğine emin misin?</p>
       </SimpleModal>
 
     </div>

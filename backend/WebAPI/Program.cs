@@ -199,6 +199,17 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// HEALTH CHECK ENDPOINT (MapControllers'dan ÖNCE)
+app.MapGet("/health", () => 
+{
+    var hasApiKey = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPENROUTER_API_KEY"));
+    return Results.Ok(new { 
+        status = "healthy", 
+        timestamp = DateTime.UtcNow,
+        hasApiKey = hasApiKey
+    });
+});
+
 app.MapControllers();
 
 app.Run();

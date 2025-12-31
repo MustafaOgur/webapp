@@ -25,7 +25,7 @@ namespace Core.Utilities.ExternalServices
                 _httpClient.DefaultRequestHeaders.Add("X-Title", siteName);
         }
 
-        public async Task<string> SendMessageAsync(string prompt, string systemPrompt = null, string model = "openai/gpt-oss-20b:free", Dictionary<string, object> extraBody = null)
+        public async Task<string> SendMessageAsync(string prompt, string systemPrompt = null, string model = "xiaomi/mimo-v2-flash:free", Dictionary<string, object> extraBody = null)
         {
             var messageList = new List<object>();
 
