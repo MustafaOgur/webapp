@@ -1,12 +1,13 @@
-import axios from "axios";
-import { jwtDecode } from "jwt-decode"; 
+import { jwtDecode } from "jwt-decode";
+import api from "./api"; // 1. ADIMDA OLUŞTURDUĞUMUZ AYARLI AXIOS'U ÇAĞIRIYORUZ
 
-// Backend Portun: 5199
-const API_URL = "http://localhost:5199/api/User/"; 
-const REFRESH_URL = "http://localhost:5199/api/RefreshToken/Refresh"; // Endpoint adresin
+// Backend Endpointleri
+const REGISTER_URL = "/User/Register";
+const LOGIN_URL = "/User/Login";
+const REFRESH_URL = "/RefreshToken/Refresh"; // Endpoint adresin (Başına http koymana gerek yok, api.js hallediyor)
 
 const register = async (username, email, password) => {
-  const response = await axios.post(API_URL + "Register", {
+  const response = await api.post(REGISTER_URL, {
     username,
     email,
     password,
@@ -15,23 +16,24 @@ const register = async (username, email, password) => {
 };
 
 const login = async (email, password) => {
-  const response = await axios.post(API_URL + "Login", {
-    email: email,      
+  // api.post kullanıyoruz (withCredentials otomatik çalışıyor)
+  const response = await api.post(LOGIN_URL, {
+    email: email,
     password: password,
   });
 
+  // Backend'den artık sadece AccessToken dönüyor (RefreshToken Cookie'de)
   const token = response.data.accessToken || response.data.AccessToken;
-  const refreshToken = response.data.refreshToken || response.data.RefreshToken;
 
   if (token) {
     const decodedToken = jwtDecode(token);
 
     // 1. Rolü bul
-    let rawRole = 
-        decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || 
-        decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role"] ||    
-        decodedToken["role"] || 
-        "User";
+    let rawRole =
+      decodedToken["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ||
+      decodedToken["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role"] ||
+      decodedToken["role"] ||
+      "User";
 
     // 2. Rolü Standartlaştır
     const normalizedRole = rawRole.toString().charAt(0).toUpperCase() + rawRole.toString().slice(1).toLowerCase();
@@ -41,20 +43,22 @@ const login = async (email, password) => {
 
     const userObj = {
       accessToken: token,
-      refreshToken: refreshToken,
+      // refreshToken: refreshToken, // <--- ARTIK BU SATIR YOK! GÜVENLİK İÇİN SİLDİK.
       username: name,
-      role: normalizedRole, 
+      role: normalizedRole,
       id: decodedToken.sub || decodedToken.nameid
     };
 
-    // 4. Kaydet
+    // 4. Kaydet (Refresh token olmadan sadece user bilgisini saklıyoruz)
     localStorage.setItem("user", JSON.stringify(userObj));
   }
-  
+
   return response.data;
 };
 
 const logout = () => {
+  // İstersen backend'e logout isteği atıp cookie'yi sildirebilirsin (opsiyonel ama iyi olur)
+  // api.post("/User/Logout"); 
   localStorage.removeItem("user");
 };
 
@@ -64,42 +68,31 @@ const getCurrentUser = () => {
 
 // --- GÜNCELLENEN REFRESHTOKEN FONKSİYONU ---
 const refreshToken = async () => {
-  const user = getCurrentUser();
+  // Artık LocalStorage'dan refresh token okumuyoruz.
+  // Cookie'de olduğu için tarayıcı otomatik gönderecek.
   
-  // Eğer kullanıcı veya refresh token yoksa başarısız dön
-  if (!user || !user.refreshToken) return { success: false };
-
   try {
-    // Backend'e istek at
-    const response = await axios.post(REFRESH_URL, {
-      token: user.refreshToken 
-    });
+    // Backend'e boş istek atıyoruz, o cookie'yi okuyacak.
+    const response = await api.post(REFRESH_URL, {}); 
 
-    // Backend 'AccessToken' veya 'data.AccessToken' dönebilir, kontrol et
     const newAccessToken = response.data.AccessToken || response.data.accessToken;
-    const newRefreshToken = response.data.RefreshToken || response.data.refreshToken;
 
     if (newAccessToken) {
-      // 1. User objesini güncelle
-      user.accessToken = newAccessToken;
-      // Eğer backend yeni refresh token da dönüyorsa onu da güncelle (Best Practice)
-      if (newRefreshToken) {
-          user.refreshToken = newRefreshToken;
+      const user = getCurrentUser();
+      
+      if (user) {
+        user.accessToken = newAccessToken;
+        // user.refreshToken = ... // ARTIK YOK
+        localStorage.setItem("user", JSON.stringify(user));
       }
       
-      // 2. LocalStorage'ı güncelle
-      localStorage.setItem("user", JSON.stringify(user));
-      
-      // 3. Başarılı olduğunu ve yeni token'ı dön
       return { success: true, accessToken: newAccessToken };
     }
   } catch (error) {
-    console.error("Token yenileme hatası:", error);
-    // Hata varsa (Refresh token süresi dolmuşsa) çıkış yap
-    logout(); 
+    console.error("Token yenileme hatası (Cookie süresi dolmuş olabilir):", error);
+    logout();
   }
-  
-  // Herhangi bir sorun varsa başarısız dön
+
   return { success: false };
 };
 
