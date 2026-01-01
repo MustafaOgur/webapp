@@ -1,4 +1,4 @@
-# webapp# DevOpsWizard - AI Destekli Web Uygulaması
+# DevOpsWizard - AI Destekli Web Uygulaması
 
 Bu proje, **.NET 9.0 (Backend)** ve **React (Frontend)** teknolojileri kullanılarak geliştirilmiş, modern mimariye sahip, AI destekli tam kapsamlı bir web uygulamasıdır. Proje, katmanlı mimari (N-Layer Architecture) prensiplerine uygun olarak tasarlanmış ve Dockerize edilmiştir.
 
@@ -50,4 +50,31 @@ Projeyi yerel ortamda çalıştırmak için aşağıdaki adımları izleyin:
 ### 1. Depoyu Klonlayın
 ```bash
 git clone https://github.com/MustafaOgur/webapp.git
-cd webapp
+```
+### 2. Gereksinimler
+Bilgisayarınızda Docker Desktop uygulamasının yüklü ve çalışıyor olması gerekmektedir.
+
+### 3. Ortam Değişkenlerini Ayarlama (.env)
+Projenin kök dizininde (docker-compose.yml dosyasının olduğu yerde) .env adında bir dosya oluşturun ve içine OpenRouter API anahtarınızı ekleyin. Bu anahtar AI servisinin çalışması için gereklidir:
+```bash
+OPENROUTER_API_KEY=sk-or-v1-......(kendi_keyiniz_buraya)
+```
+### 4. Uygulamayı Başlatma
+Bu komut, gerekli veritabanı, backend ve frontend servislerini derleyip ayağa kaldıracaktır:
+```bash
+docker-compose up --build
+```
+### 5. Erişim
+Konteynerler hazır olduğunda (yaklaşık 1-2 dakika sürebilir) aşağıdaki adreslerden erişim sağlayabilirsiniz:
+
+Web Arayüzü (Frontend): http://localhost:3000
+
+API Dokümantasyonu (Swagger): http://localhost:5199/swagger
+
+SQL Server: `localhost:1433`
+
+### 6. Uygulamayı Durdurma
+Uygulamayı kapatmak için terminalde CTRL + C yapabilir veya şu komutu kullanabilirsiniz:
+```bash
+docker-compose down
+```
